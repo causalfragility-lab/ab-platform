@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "AB Platform: Interpretable, reproducible, robustness-aware A/B experimentation"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: Hait
+    given-names: Subir
+    orcid: ""
+repository-code: "https://github.com/causalfragility-lab/ab-platform"
+url: "https://github.com/causalfragility-lab/ab-platform"
+abstract: >
+  A lightweight end-to-end A/B testing platform with deterministic SHA-256
+  user assignment, a robustness-aware inference engine (Welch t-test,
+  two-proportion z-test, SRM detection, fragility warnings, practical
+  significance), and an interactive Plotly dashboard. Built with FastAPI,
+  SQLAlchemy, and SciPy.
+keywords:
+  - ab-testing
+  - experimentation
+  - causal-inference
+  - statistics
+  - fastapi
+  - python
+  - data-science
+  - sample-ratio-mismatch
+  - hypothesis-testing
+license: MIT
+version: "0.1.0"
+date-released: "2026-04-04"
