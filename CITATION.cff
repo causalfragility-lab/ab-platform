@@ -5,7 +5,9 @@ type: software
 authors:
   - family-names: Hait
     given-names: Subir
-    orcid: ""
+    orcid: "https://orcid.org/0009-0004-9871-9677"
+    email: haitsubi@msu.edu
+    affiliation: "Michigan State University"
 repository-code: "https://github.com/causalfragility-lab/ab-platform"
 url: "https://github.com/causalfragility-lab/ab-platform"
 abstract: >
