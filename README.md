@@ -4,6 +4,18 @@
 
 ---
 
+## 🚀 Live Demo
+
+| | URL |
+|---|---|
+| **API docs** | https://ab-platform-p56v.onrender.com/docs |
+| **Live results** | https://ab-platform-p56v.onrender.com/results/exp_eaf81ae8 |
+| **Health check** | https://ab-platform-p56v.onrender.com/health |
+
+> Note: hosted on Render free tier — first request may take ~30 seconds to wake up.
+
+---
+
 ## What this is
 
 A lightweight end-to-end A/B testing platform with three core layers:
@@ -12,14 +24,14 @@ A lightweight end-to-end A/B testing platform with three core layers:
 |---|---|
 | **Assignment service** | Deterministically assigns users to variants via SHA-256 hash — same user always gets same variant, no sessions needed |
 | **Inference engine** | Welch t-test (continuous) and two-proportion z-test (binary), with CIs, lift, SRM detection, and fragility warnings |
-| **Dashboard** | React UI with experiment registry, result cards, CI visualization, and day-by-day trend plots |
+| **Methods notebook** | Power analysis, CUPED variance reduction, sequential testing (O'Brien-Fleming), and causal forest HTE |
 
 ---
 
 ## Architecture
 
 ```
-ab_platform/
+ab-platform/
 ├── app/
 │   ├── main.py                  # FastAPI entry point + CORS
 │   ├── api/
@@ -29,8 +41,7 @@ ab_platform/
 │   ├── core/
 │   │   ├── hashing.py           # Deterministic SHA-256 bucketing
 │   │   ├── inference.py         # binary_test · continuous_test · SRM · fragility
-│   │   ├── metrics.py           # (extensible metric definitions)
-│   │   └── diagnostics.py      # Balance checks · dropout flags
+│   │   └── diagnostics.py       # Balance checks · dropout flags
 │   ├── db/
 │   │   ├── models.py            # SQLAlchemy ORM (Experiment, Variant, Assignment, Event)
 │   │   ├── schemas.py           # Pydantic v2 request/response models
@@ -39,11 +50,8 @@ ab_platform/
 │       ├── assignment_service.py
 │       ├── event_service.py
 │       └── result_service.py    # Orchestrates inference + diagnostics + trends
-├── frontend/                    # React dashboard (see below)
-├── demo_data/
-│   └── seed.py                  # Seeds 800 users, 3 event types, realistic CVR split
-├── docker-compose.yml
-├── Dockerfile
+├── seed.py                      # Seeds 800 users, realistic CVR split
+├── render.yaml                  # Render deployment config
 └── requirements.txt
 ```
 
@@ -60,22 +68,22 @@ pip install -r requirements.txt
 # 2. Start API
 uvicorn app.main:app --reload --port 8000
 
-# 3. Seed demo data (in a second terminal)
-python demo_data/seed.py
+# 3. Seed demo data
+python seed.py
 
 # 4. View results
 curl http://localhost:8000/results/exp_demo_001
 ```
 
-### Docker
+### Live API
 
 ```bash
-docker-compose up --build
-```
+# Health check
+curl https://ab-platform-p56v.onrender.com/health
 
-API → http://localhost:8000  
-Frontend → http://localhost:3000  
-Docs → http://localhost:8000/docs
+# Get live experiment results
+curl https://ab-platform-p56v.onrender.com/results/exp_eaf81ae8
+```
 
 ---
 
@@ -109,7 +117,7 @@ Docs → http://localhost:8000/docs
 ## Create an experiment
 
 ```bash
-curl -X POST http://localhost:8000/experiments \
+curl -X POST https://ab-platform-p56v.onrender.com/experiments \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Homepage hero test",
@@ -127,47 +135,39 @@ curl -X POST http://localhost:8000/experiments \
 ## Assign a user
 
 ```bash
-curl "http://localhost:8000/assign?experiment_id=exp_XXXX&user_id=user_12345"
-# → {"user_id":"user_12345","experiment_id":"exp_XXXX","variant_id":"...","variant_name":"control","assigned_at":"..."}
+curl "https://ab-platform-p56v.onrender.com/assign?experiment_id=exp_XXXX&user_id=user_12345"
+# → {"user_id":"user_12345","variant_name":"control","assigned_at":"..."}
 ```
 
 Same call repeated = same variant. Always.
 
-## Log an outcome
-
-```bash
-curl -X POST http://localhost:8000/events \
-  -H "Content-Type: application/json" \
-  -d '{"user_id":"user_12345","experiment_id":"exp_XXXX","event_name":"conversion","event_value":1}'
-```
-
 ## Get results
 
 ```bash
-curl http://localhost:8000/results/exp_XXXX
+curl https://ab-platform-p56v.onrender.com/results/exp_eaf81ae8
 ```
 
 Returns:
 
 ```json
 {
-  "experiment_name": "...",
+  "experiment_name": "Email Campaign Landing Page Test",
   "metric_name": "conversion",
   "metric_type": "binary",
-  "control":   { "n": 395, "mean": 0.0835, "std": 0.277 },
-  "treatment": { "n": 405, "mean": 0.1111, "std": 0.315 },
-  "lift_absolute":  0.0276,
-  "lift_relative":  0.33,
-  "p_value":        0.189,
-  "ci_lower":      -0.0134,
-  "ci_upper":       0.0686,
+  "control":   { "n": 396, "mean": 0.0984, "std": 0.298 },
+  "treatment": { "n": 404, "mean": 0.1237, "std": 0.329 },
+  "lift_absolute":  0.0253,
+  "lift_relative":  0.257,
+  "p_value":        0.256,
+  "ci_lower":      -0.018,
+  "ci_upper":       0.069,
   "statistically_significant": false,
   "practically_significant":   true,
-  "interpretation": "Treatment increased conversion by 33.0% (not significant at α=0.05).",
+  "interpretation": "Treatment increased conversion by 25.7% (not significant at α=0.05).",
   "sample_ratio_mismatch": false,
-  "srm_p_value": 0.724,
-  "fragility_warning": "CI crosses zero — result is borderline.",
-  "dropout_info": { "flag": false, "control_dropout_rate": 0, "treatment_dropout_rate": 0 },
+  "srm_p_value": 0.772,
+  "fragility_warning": null,
+  "dropout_info": { "flag": false },
   "daily_trends": [...]
 }
 ```
@@ -209,28 +209,42 @@ bucket = int(digest[:8], 16) / 0xFFFFFFFF   # float in [0, 1)
 
 ---
 
+## Methods notebook
+
+Advanced statistical methods implemented and verified against the demo data:
+
+| Method | What it shows |
+|---|---|
+| **Power analysis & MDE** | Required n per arm, achievable power at current n, power curves |
+| **CUPED** | Variance reduction using pre-experiment covariates (Deng et al., 2013) |
+| **Sequential testing** | O'Brien-Fleming alpha spending, rolling z-statistic vs. boundary |
+| **Causal forest (HTE)** | Data-driven CATE estimation, feature importances, segment-level effects |
+| **SQL patterns** | Production-grade warehouse queries for CVR, SRM, funnel, daily trends |
+
+---
+
 ## Demo scenario
 
 **"Email Campaign Landing Page Test"**
 
 | | Control | Treatment |
 |---|---|---|
-| Page | Old landing page | Redesigned page |
-| CVR (true) | 8% | 11.3% |
-| CVR (observed) | 8.35% | 11.11% |
-| n | 395 | 405 |
-| Lift | +33% | |
-| p-value | 0.189 (n.s.) | |
+| n | 396 | 404 |
+| CVR (observed) | 9.84% | 12.37% |
+| Lift | +25.7% | |
+| p-value | 0.256 (n.s.) | |
+| SRM | None (p=0.772) | |
 | Interpretation | Promising lift but underpowered — need more data | |
 
 ---
 
 ## Roadmap (v0.2)
 
-- [ ] Covariate adjustment (CUPED) to reduce variance
+- [x] Power analysis + sample size calculator
+- [x] Covariate adjustment (CUPED) to reduce variance
+- [x] Sequential testing with alpha spending
+- [x] Subgroup breakdown (segment-level lift)
+- [x] Heterogeneous treatment effects (causal forest)
 - [ ] Multi-armed bandit assignment option
-- [ ] Power analysis + sample size calculator
-- [ ] Subgroup breakdown (segment-level lift)
-- [ ] Sequential testing with alpha spending
 - [ ] PostgreSQL support for production
 - [ ] Authentication + multi-tenant experiments
