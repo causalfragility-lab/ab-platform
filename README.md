@@ -238,13 +238,18 @@ Advanced statistical methods implemented and verified against the demo data:
 
 ---
 
-## Roadmap (v0.2)
+ ## Completed (v0.2 Methods Layer)
 
 - [x] Power analysis + sample size calculator
 - [x] Covariate adjustment (CUPED) to reduce variance
 - [x] Sequential testing with alpha spending
 - [x] Subgroup breakdown (segment-level lift)
 - [x] Heterogeneous treatment effects (causal forest)
-- [ ] Multi-armed bandit assignment option
-- [ ] PostgreSQL support for production
+
+## Next roadmap
+
+- [ ] Dashboard UI (React + Plotly)
+- [ ] PostgreSQL persistence for production
 - [ ] Authentication + multi-tenant experiments
+- [ ] Production monitoring + alerting
+- 
